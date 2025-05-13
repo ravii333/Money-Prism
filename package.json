@@ -1,0 +1,18 @@
+{
+  "name": "money-prism",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+  "frontend": "npm start --prefix frontend",
+  "server": "nodemon server/index.js",
+  "ai": "cd ai_models && python app.py",
+  "dev": "concurrently \"npm run server\" \"npm run frontend\""
+},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
