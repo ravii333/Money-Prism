@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { User, ShoppingBag, Heart } from "lucide-react";
+import { User, ShoppingBag, Heart, Search } from "lucide-react";
 // import { toast } from "react-toastify";
 
 const Navbar = ({ user, setUser }) => {
@@ -25,9 +25,21 @@ const Navbar = ({ user, setUser }) => {
         </Link>
 
         {/* Hamburger Icon for Mobile */}
-        <div className="md:hidden text-white" onClick={() => setMenuOpen(!menuOpen)}>
+        <div
+          className="md:hidden text-white"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
           ☰
         </div>
+        <div className="hidden md:flex items-center bg-white rounded-lg px-2">
+  <input
+    type="text"
+    placeholder="Search..."
+    className="px-2 py-1 bg-transparent text-black placeholder-gray-600 focus:outline-none"
+  />
+  <Search className="w-5 h-5 text-gray-600" />
+</div>
+
 
         {/* Navigation Links */}
         <div
@@ -35,10 +47,25 @@ const Navbar = ({ user, setUser }) => {
             menuOpen ? "flex" : "hidden"
           } md:flex flex-col md:flex-row items-start md:items-center md:space-x-8 space-y-4 md:space-y-0 text-white absolute md:static top-16 left-0 w-full md:w-auto bg-blue-950 md:bg-transparent px-4 md:px-0 py-4 md:py-0`}
         >
+          {/* Search Input: Mobile */}
+         <div className="w-full md:hidden px-1 mb-2">
+  <div className="flex items-center bg-white/20 rounded-lg px-2">
+    <input
+      type="text"
+      placeholder="Search..."
+      className="w-full py-2 bg-transparent text-white placeholder-white/70 focus:outline-none"
+    />
+    <Search className="w-5 h-5 text-white/70" />
+  </div>
+</div>
+
           <Link to="/" className="hover:underline w-full md:w-auto">
             Home
           </Link>
-          <Link to="/wishList" className="hover:underline flex items-center gap-1">
+          <Link
+            to="/wishList"
+            className="hover:underline flex items-center gap-1"
+          >
             <Heart className="w-5 h-5" color="#dedae2" />
             WishList
           </Link>
