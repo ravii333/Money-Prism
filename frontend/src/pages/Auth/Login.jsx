@@ -1,79 +1,140 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+// src/pages/Auth/Login.jsx
 
-function Login({ setUser }) {
-  const [emailOrPhone, setEmailOrPhone] = useState('');
-  const [password, setPassword] = useState('');
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { FaUser, FaLock } from 'react-icons/fa';
+
+const Login = ({ setUser }) => {
   const navigate = useNavigate();
+  const location = useLocation(); // Hook to access the state passed from navigate
 
-  const handleSubmit = async (e) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // --- THIS useEffect IS THE NEW ADDITION ---
+  // It runs when the component loads to check for a success message
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Clean the location state to prevent the message from re-appearing on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
+
+  const handleLogin = (e) => {
     e.preventDefault();
 
-    try {
-      // Make your API call (replace URL with your backend endpoint)
-      const res = await axios.post('http://localhost:5000/api/auth/login', {
-        identifier: emailOrPhone,
-        password,
-      });
-
-      const { token, user } = res.data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      setUser(user);
-      navigate('/');
-    } catch (err) {
-      alert('Login failed. Please check credentials.');
-      console.error(err);
+    if (!email || !password) {
+      setError('Please enter both email and password.');
+      return;
     }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        setError('Please enter a valid email address.');
+        return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    setSuccessMessage(''); // Clear success message on new login attempt
+
+    setTimeout(() => {
+      const userName = email.split('@')[0];
+      const loggedInUser = {
+        id: new Date().getTime(),
+        name: userName.charAt(0).toUpperCase() + userName.slice(1),
+        email: email,
+      };
+      
+      setUser(loggedInUser);
+      localStorage.setItem('user', JSON.stringify(loggedInUser));
+      navigate('/');
+    }, 1500);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-fuchsia-700 via-indigo-900 to-fuchsia-600 flex items-center justify-center px-4">
-      <div className="backdrop-blur-md bg-white/10 border border-white/20 p-6 sm:p-8 rounded-xl shadow-xl w-full max-w-sm sm:max-w-md md:max-w-lg">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-white">Login</h2>
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-1">
-            <label htmlFor="loginEmail" className="text-white text-sm">Email or Phone No.</label>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-lg">
+        <div className="text-center">
+          <h1 className="text-3xl font-extrabold text-gray-900">
+            Welcome Back to PartWise
+          </h1>
+          <p className="mt-2 text-gray-600">
+            Sign in to access your alerts and account.
+          </p>
+        </div>
+
+        {/* --- THIS BLOCK DISPLAYS THE SUCCESS MESSAGE --- */}
+        {successMessage && (
+          <div className="p-3 my-2 text-sm text-center text-green-800 bg-green-100 rounded-lg">
+            {successMessage}
+          </div>
+        )}
+
+        {/* --- THIS BLOCK DISPLAYS THE ERROR MESSAGE --- */}
+        {error && (
+          <div className="p-3 my-2 text-sm text-center text-red-800 bg-red-100 rounded-lg">
+            {error}
+          </div>
+        )}
+        
+        <form className="space-y-6" onSubmit={handleLogin}>
+          <div className="relative">
+            <FaUser className="absolute top-3.5 left-4 text-gray-400" />
             <input
-              id="loginEmail"
-              type="text"
-              value={emailOrPhone}
-              onChange={(e) => setEmailOrPhone(e.target.value)}
-              placeholder="Enter your email or phone"
-              className="w-full p-3 rounded-lg bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none focus:ring-1 focus:ring-gray-300"
+              id="email-address"
+              name="email"
+              type="email"
+              autoComplete="email"
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-md placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-blue"
+              placeholder="Enter any valid email"
             />
           </div>
 
-          <div className="space-y-1">
-            <label htmlFor="loginPassword" className="text-white text-sm">Password</label>
+          <div className="relative">
+            <FaLock className="absolute top-3.5 left-4 text-gray-400" />
             <input
-              id="loginPassword"
+              id="password"
+              name="password"
               type="password"
+              autoComplete="current-password"
+              required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              className="w-full p-3 rounded-lg bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none focus:ring-1 focus:ring-gray-300"
-              required
+              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-md placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-blue"
+              placeholder="Enter any password"
             />
           </div>
 
-          <button
-            type="submit"
-            className="w-full bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-semibold py-3 rounded-lg transition"
-          >
-            Login
-          </button>
-
-          <div className="flex justify-between text-sm text-white mt-2">
-            <Link to="/register" className="hover:underline">Register</Link>
-            <Link to="/forgot_password" className="hover:underline">Forgot Password?</Link>
+          <div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full flex justify-center py-3 px-4 border border-transparent text-lg font-medium rounded-md text-white bg-brand-blue hover:bg-brand-blue-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
+            >
+              {isLoading ? 'Signing In...' : 'Sign In'}
+            </button>
           </div>
         </form>
+
+        <div className="text-sm text-center text-gray-600">
+          <p>
+            Don't have an account?{' '}
+            <Link to="/register" className="font-medium text-brand-blue hover:text-brand-blue-light">
+              Register here
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default Login;

@@ -1,91 +1,137 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaUser, FaLock, FaEnvelope } from 'react-icons/fa';
 
-function Register() {
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+const Register = () => {
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-    if (password !== confirmPassword) {
-      alert('Passwords do not match!');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleRegister = (e) => {
+    e.preventDefault();
+    setError('');
+
+    // --- Form Validation ---
+    if (!name || !email || !password || !confirmPassword) {
+      setError('All fields are required.');
       return;
     }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    if (password.length < 6) {
+        setError('Password must be at least 6 characters long.');
+        return;
+    }
 
-    try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', {
-        identifier,
-        password,
+    setIsLoading(true);
+
+    setTimeout(() => {
+      
+      console.log('Simulating registration for:', { name, email });
+      
+      setIsLoading(false);
+      navigate('/login', {
+        state: { message: 'Registration successful! Please log in.' }
       });
 
-      if (res.status === 201) {
-        alert('Registration successful!');
-        navigate('/login');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Registration failed. Try again.');
-    }
+    }, 1500); 
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-fuchsia-700 via-indigo-900 to-fuchsia-600  flex items-center justify-center px-4">
-      <div className="backdrop-blur-md bg-white/10 border border-white/20 p-6 sm:p-8 rounded-xl shadow-xl w-full max-w-sm sm:max-w-md md:max-w-lg">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-white">Register</h2>
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-1">
-            <label htmlFor="email" className="text-white text-sm">Email or Phone No.</label>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-lg">
+        <div className="text-center">
+          <h1 className="text-3xl font-extrabold text-gray-900">
+            Create Your PartWise Account
+          </h1>
+          <p className="mt-2 text-gray-600">
+            Join us to start saving on parts today.
+          </p>
+        </div>
+        
+        <form className="mt-8 space-y-6" onSubmit={handleRegister}>
+          <div className="relative">
+            <FaUser className="absolute top-3.5 left-4 text-gray-400" />
             <input
-              id="email"
               type="text"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              placeholder="Enter your email or phone"
-              className="w-full p-3 rounded-lg bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none focus:ring-1 focus:ring-gray-300"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-md placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-blue"
+              placeholder="Full Name"
               required
             />
           </div>
 
-          <div className="space-y-1">
-            <label htmlFor="password" className="text-white text-sm">Password</label>
+          <div className="relative">
+            <FaEnvelope className="absolute top-3.5 left-4 text-gray-400" />
             <input
-              id="password"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-md placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-blue"
+              placeholder="Email address"
+              required
+            />
+          </div>
+
+          <div className="relative">
+            <FaLock className="absolute top-3.5 left-4 text-gray-400" />
+            <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              className="w-full p-3 rounded-lg bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none focus:ring-1 focus:ring-gray-300"
+              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-md placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-blue"
+              placeholder="Password"
               required
             />
           </div>
 
-          <div className="space-y-1">
-            <label htmlFor="confirmPassword" className="text-white text-sm">Confirm Password</label>
+          <div className="relative">
+            <FaLock className="absolute top-3.5 left-4 text-gray-400" />
             <input
-              id="confirmPassword"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm your password"
-              className="w-full p-3 rounded-lg bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none focus:ring-1 focus:ring-gray-300"
+              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-md placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-blue"
+              placeholder="Confirm Password"
               required
             />
           </div>
 
-          <button
-            type="submit"
-            className="w-full bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-semibold py-3 rounded-lg transition"
-          >
-            Register
-          </button>
+          {error && (
+            <p className="text-sm text-red-600 text-center">{error}</p>
+          )}
+
+          <div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full flex justify-center py-3 px-4 border border-transparent text-lg font-medium rounded-md text-white bg-brand-blue hover:bg-brand-blue-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
+            >
+              {isLoading ? 'Creating Account...' : 'Register'}
+            </button>
+          </div>
         </form>
+
+        <div className="text-sm text-center text-gray-600">
+          <p>
+            Already have an account?{' '}
+            <Link to="/login" className="font-medium text-brand-blue hover:text-brand-blue-light">
+              Sign in
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default Register;
