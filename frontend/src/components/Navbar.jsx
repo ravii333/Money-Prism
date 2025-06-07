@@ -25,7 +25,7 @@ const Navbar = ({ user, handleLogout }) => {
     <nav className="sticky top-0 w-full z-50 bg-gray-900 text-white shadow-md">
       <div className="container mx-auto px-6 py-3 flex justify-between items-center">
         <Link to="/" onClick={closeAllMenus} className="text-2xl font-bold">
-          PartWise
+          MoneyPrism
         </Link>
 
         {/* Hamburger Menu Icon for Mobile */}

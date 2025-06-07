@@ -34,7 +34,7 @@ const categories = [
 const testimonials = [
   {
     quote:
-      "PartWise saved me over ₹1,500 on a new screen for my iPhone. The price alert feature is a game-changer!",
+      "MoneyPrism saved me over ₹1,500 on a new screen for my iPhone. The price alert feature is a game-changer!",
     name: "Aarav Sharma",
     location: "Mumbai",
   },

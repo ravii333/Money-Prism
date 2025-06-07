@@ -61,7 +61,7 @@ const Login = ({ setUser }) => {
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-lg">
         <div className="text-center">
           <h1 className="text-3xl font-extrabold text-gray-900">
-            Welcome Back to PartWise
+            Welcome Back to Money-Prism
           </h1>
           <p className="mt-2 text-gray-600">
             Sign in to access your alerts and account.
@@ -117,7 +117,7 @@ const Login = ({ setUser }) => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent text-lg font-medium rounded-md text-white bg-brand-blue hover:bg-brand-blue-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
+              className="w-full flex justify-center py-3 px-4 border border-transparent text-lg font-medium rounded-md text-gray-500 bg-gray-200 hover:bg-brand-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 hover:bg-gray-600 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Signing In...' : 'Sign In'}
             </button>
