@@ -56,7 +56,6 @@ const Navbar = ({ user, handleLogout }) => {
             Home
           </NavLink>
 
-          {/* Explore Dropdown */}
           <div className="relative">
             <button
               onClick={() => setExploreOpen(!exploreOpen)}
@@ -76,14 +75,14 @@ const Navbar = ({ user, handleLogout }) => {
                   onClick={closeAllMenus}
                   className="block px-4 py-2  hover:border-b-1 border-white "
                 >
-                  Mobile Parts
+                  Mobiles
                 </Link>
                 <Link
-                  to="/search?category=cars"
+                  to="/search?category=laptops"
                   onClick={closeAllMenus}
                   className="block px-4 py-2 hover:border-b-2 border-white"
                 >
-                  Car Parts
+                  Laptops
                 </Link>
               </div>
             )}
@@ -107,15 +106,8 @@ const Navbar = ({ user, handleLogout }) => {
               className="hover:border-b-2 border-white"
               title="Wishlist"
             >
-              <FaHeart size={20} />
-            </Link>
-            <Link
-              to="/cart"
-              onClick={closeAllMenus}
-              className="hover:border-b-2 border-white"
-              title="Cart"
-            >
-              <FaShoppingBag size={20} />
+              <FaHeart size={15} />
+              Wishlist
             </Link>
 
             {user ? (

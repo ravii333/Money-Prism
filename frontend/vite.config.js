@@ -5,4 +5,15 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(),tailwindcss(),],
+    server: {
+    proxy: {
+      // This tells Vite to forward any request starting with /api
+      // to your backend server running on port 5000.
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true, // This is often needed for security
+        secure: false,      
+      }
+    }
+  }
 })

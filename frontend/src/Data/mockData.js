@@ -89,3 +89,28 @@ export const priceHistoryData = [
   { month: 'Sep', price: 5000 },
   { month: 'Oct', price: 5000 },
 ];
+
+export const categories =[
+  {name:"Mobile"},
+
+  {name:"Laptops"},
+
+];
+
+export const testimonials = [
+  {
+    name: "Aarav Sharma",
+    location: "Mumbai",
+    quote: "MoneyPrism saved me over ₹1,500 on a new screen for my iPhone. The price alert feature is a game-changer!",
+  },
+  {
+    name: "Priya Singh",
+    location: "Delhi",
+    quote: "Finding a specific battery for my old car was a nightmare until I used this site. Found one in minutes at a great price.",
+  },
+  {
+    name: "Rohan Verma",
+    location: "Bengaluru",
+    quote: "As a small repair shop owner, PartWise is an essential tool for my business. It helps me source parts efficiently.",
+  },
+];
