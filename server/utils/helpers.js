@@ -1,13 +1,22 @@
 import { pipeline } from "@xenova/transformers";
 
 export const normalizePrice = (priceString) => {
-  /* ... */
-};
-export const normalizeTitle = (title) => {
-  /* ... */
+  if (!priceString) return null;
+  const cleaned = priceString.replace(/[^0-9]/g, "");
+  return cleaned ? parseInt(cleaned, 10) : null;
 };
 
-// --- AI-POWERED CATEGORY INFERENCE (WITH CORRECT SINGLETON PATTERN) ---
+export const normalizeTitle = (title) => {
+  if (!title) return null;
+
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/\s+/g, " ");
+};
+
+// AI-POWERED CATEGORY INFERENCE 
 
 let classifierPromise = null;
 
@@ -28,38 +37,95 @@ const initializeClassifier = async () => {
   }
 };
 
-export const aiInferCategory = async (title) => {
+export const aiInferCategory = async (title, searchHint = "") => {
   if (!classifierPromise) {
     classifierPromise = initializeClassifier();
   }
 
   try {
+    const text = `${title} ${searchHint}`.toLowerCase();
+
+    const CATEGORY_KEYWORDS = {
+      Mobile: ["smartphone", "mobile", "iphone", "android", "5g phone", "phone"],
+      Laptop: ["laptop", "notebook", "chromebook", "macbook", "ultrabook"],
+      Tablet: ["tablet", "ipad", "tab"],
+      Camera: ["camera", "dslr", "mirrorless", "action cam"],
+      Headphones: ["headphone", "earphone", "earbuds", "headset", "tws"],
+      Smartwatch: ["smartwatch", "fitness band", "smart band"],
+      Television: ["tv", "television", "smart tv", "led tv", "oled"],
+      HomeAppliance: [
+        "washing machine",
+        "refrigerator",
+        "fridge",
+        "microwave",
+        "ac",
+      ],
+      Electronics: ["charger", "power bank", "adapter", "cable", "router"],
+      Fashion: [
+        "shirt",
+        "t-shirt",
+        "jeans",
+        "dress",
+        "kurta",
+        "shoe",
+        "sneaker",
+      ],
+      Footwear: ["shoe", "sneaker", "slipper", "sandal", "boot"],
+      Furniture: ["sofa", "bed", "chair", "table", "wardrobe"],
+      Books: ["book", "novel", "paperback", "hardcover"],
+    };
+
+    for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+      if (keywords.some((kw) => text.includes(kw))) {
+        return category;
+      }
+    }
+
     const classifier = await classifierPromise;
 
     const candidate_labels = [
       "Mobile Phone",
-      "Laptop Computer",
+      "Laptop",
+      "Tablet",
       "Camera",
       "Headphones",
+      "Smartwatch",
+      "Television",
+      "Home Appliance",
       "Electronics Accessory",
+      "Fashion Clothing",
+      "Footwear",
+      "Furniture",
+      "Book",
+      "Other",
     ];
-    console.log(`[AI] Classifying title: "${title}"`);
+
     const output = await classifier(title, candidate_labels, {
       multi_label: false,
     });
 
-    const bestCategory = output.labels[0];
-    console.log(`[AI] Best category found: "${bestCategory}"`);
+    const bestLabel = output.labels[0];
 
-    // Simplify the output
-    if (bestCategory.includes("Mobile")) return "Mobile";
-    if (bestCategory.includes("Laptop")) return "Laptop";
-    if (bestCategory.includes("Camera")) return "Camera";
-    if (bestCategory.includes("Headphone")) return "Headphones";
+    const AI_CATEGORY_MAP = {
+      "Mobile Phone": "Mobile",
+      Laptop: "Laptop",
+      Tablet: "Tablet",
+      Camera: "Camera",
+      Headphones: "Headphones",
+      Smartwatch: "Smartwatch",
+      Television: "Television",
+      "Home Appliance": "HomeAppliance",
+      "Electronics Accessory": "Electronics",
+      "Fashion Clothing": "Fashion",
+      Footwear: "Footwear",
+      Furniture: "Furniture",
+      Book: "Books",
+      Other: "Others",
+    };
 
-    return "General";
+    return AI_CATEGORY_MAP[bestLabel] || "Others";
   } catch (error) {
-    console.error("[AI] Error during classification:", error);
-    return "General";
+    console.error("[AI CATEGORY ERROR]", error);
+    return "Others";
   }
 };
