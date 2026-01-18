@@ -2,10 +2,7 @@ import mongoose from "mongoose";
 
 const priceHistorySchema = new mongoose.Schema({
   price: Number,
-  date: {
-    type: Date,
-    default: Date.now,
-  },
+  date: { type: Date, default: Date.now },
 });
 
 const sellerSubSchema = new mongoose.Schema({
@@ -21,13 +18,18 @@ const productSchema = new mongoose.Schema(
     name: { type: String, required: true },
     normalizedName: { type: String, required: true, index: true },
     imageURL: { type: String, required: true },
-    category: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      required: true,
+      index: true,
+    },
     sellers: [sellerSubSchema],
     currentLowestPrice: { type: Number, default: null },
     historicalLowestPrice: { type: Number, default: null },
     historicalHighestPrice: { type: Number, default: null },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 productSchema.methods.updateAggregatePrices = function () {
@@ -35,21 +37,17 @@ productSchema.methods.updateAggregatePrices = function () {
     this.currentLowestPrice = null;
     return;
   }
-
   const sortedSellers = [...this.sellers].sort((a, b) => a.price - b.price);
   this.currentLowestPrice = sortedSellers[0].price;
 
-  let historicalLow = Infinity;
-  let historicalHigh = -Infinity;
-
+  let historicalLow = Infinity,
+    historicalHigh = -Infinity;
   this.sellers.forEach((seller) => {
     seller.priceHistory.forEach((historyEntry) => {
-      if (historyEntry.price < historicalLow) {
+      if (historyEntry.price < historicalLow)
         historicalLow = historyEntry.price;
-      }
-      if (historyEntry.price > historicalHigh) {
+      if (historyEntry.price > historicalHigh)
         historicalHigh = historyEntry.price;
-      }
     });
   });
 

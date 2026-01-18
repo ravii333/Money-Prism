@@ -1,10 +1,15 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 
+// Use the stealth plugin to make Puppeteer harder to detect
 puppeteer.use(StealthPlugin());
 
+/**
+ * A helper function to scroll to the bottom of the page, 
+ * ensuring all lazy-loaded content is loaded.
+ * @param {import('puppeteer').Page} page
+ */
 async function autoScroll(page) {
-  // (autoScroll function remains the same as before)
   await page.evaluate(async () => {
     await new Promise((resolve) => {
       let totalHeight = 0;
@@ -22,79 +27,140 @@ async function autoScroll(page) {
   });
 }
 
-const scrapeFlipkart = async (searchQuery) => {
+// Reusable browser launch configuration to keep code DRY
+const launchConfig = {
+  headless: 'new',
+  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+};
+
+// =====================================================================
+// FUNCTION 1: Scrapes a list of products from a search query page
+// =====================================================================
+export const searchProducts = async (searchQuery) => {
   let browser;
   let page;
-  console.log(`🚀 Starting generic scraper for: "${searchQuery}"`);
+  console.log(`🚀 Starting search scrape for: "${searchQuery}"`);
 
   try {
-    browser = await puppeteer.launch({ /* ...launch options remain the same... */ });
+    browser = await puppeteer.launch(launchConfig);
     page = await browser.newPage();
-    // ... all the page.set* options remain the same ...
     await page.setViewport({ width: 1440, height: 900 });
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36');
-    await page.setExtraHTTPHeaders({
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-      'Accept-Encoding': 'gzip, deflate, br',
-      'Accept-Language': 'en-US,en;q=0.9',
-    });
-
-
+    
     const url = `https://www.flipkart.com/search?q=${encodeURIComponent(searchQuery)}`;
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
     
-    // Gracefully handle "No results found" page
-    const noResultsSelector = 'div._16VZrA';
-    const noResults = await page.$(noResultsSelector); // Use .$ to check for existence without erroring
-    if (noResults) {
-      console.log(`No results found for "${searchQuery}".`);
-      await browser.close();
-      return []; // Return an empty array
-    }
-
     await autoScroll(page);
     console.log('Scrolling complete.');
 
-    // ✅ GENERALIZED SELECTORS: We wait for ANY of the known container layouts to appear.
-    const productContainerSelector = 'a.CGtC98, div._1AtVbE, div._2kHMtA';
-    console.log(`Waiting for any known product container: "${productContainerSelector}"`);
+    // This is a comprehensive list of all known selectors for a product "card".
+    // It makes the scraper robust against different page layouts.
+    const productContainerSelector = [
+      'div.slAVV4',    // NEW: For grid views like headphones
+      'div._4ddWXP',   // Another common grid view
+      'div._1AtVbE',   // For list views (like mobile phones)
+      'a.CGtC98',      // An old layout where the link itself is the container
+      'div._2kHMtA',   // An old list view
+    ].join(', ');
+
+    console.log(`Waiting for product containers to appear...`);
     await page.waitForSelector(productContainerSelector, { timeout: 20000 });
     console.log('Product containers found! Extracting data...');
 
     const products = await page.evaluate((selector) => {
       const results = [];
-      const productCards = document.querySelectorAll(selector);
-
-      productCards.forEach(card => {
-        // ✅ GENERALIZED INNER SELECTORS: We look for ANY of the known class names for each element.
-        const titleElement = card.querySelector('div.KzDlHZ, div._4rR01T, .s1Q9rs');
-        const priceElement = card.querySelector('div.Nx9bqj, div._30jeq3');
-        const imageElement = card.querySelector('img.DByuf4, img._396cs4');
+      document.querySelectorAll(selector).forEach(card => {
+        // Use a generalized list of selectors for the inner elements
+        const titleEl = card.querySelector('a.wjcEIp, a.s1Q9rs, div.KzDlHZ, div._4rR01T, a.IRpwTa');
+        const priceEl = card.querySelector('div.Nx9bqj, div._30jeq3');
+        const imageEl = card.querySelector('img.DByuf4, img._396cs4, img._2r_T1I');
         
-        // The link can be the card itself if it's an `<a>` tag, or a child `<a>` tag.
-        const link = card.tagName === 'A' ? card.href : card.querySelector('a')?.href;
+        let link = null;
+        if (card.tagName === 'A') {
+            link = card.href;
+        } else {
+            const linkTag = card.querySelector('a.VJA3rP, a._1fQZEK');
+            if (linkTag) link = linkTag.href;
+        }
 
-        if (titleElement && priceElement && imageElement && link) {
+        if (titleEl && priceEl && imageEl && link) {
           results.push({
-            title: titleElement.innerText.trim(),
-            price: priceElement.innerText.trim(),
+            title: titleEl.title || titleEl.innerText.trim(), // Prefer the 'title' attribute for clean text
+            price: priceEl.innerText.trim(),
             link,
-            image: imageElement.src
+            image: imageEl.src,
           });
         }
       });
       return results;
     }, productContainerSelector);
 
-    console.log(`✅ Extracted ${products.length} products.`);
-    await browser.close();
+    console.log(`✅ Extracted ${products.length} products from search.`);
     return products;
 
   } catch (error) {
-    console.error(`Scraper failed for "${searchQuery}": ${error.message}`);
+    console.error(`❌ Search scraper failed for "${searchQuery}": ${error.message}`);
+    if (page) {
+      await page.screenshot({ path: 'search_scraper_failure.png' });
+      console.log('📸 Screenshot of failed page saved to search_scraper_failure.png');
+    }
+    return [];
+  } finally {
     if (browser) await browser.close();
-    return []; // Always return an array, even on error.
   }
 };
 
-export default scrapeFlipkart;
+
+// =====================================================================
+// FUNCTION 2: Scrapes just the price from a single product detail page URL
+// =====================================================================
+export const getLivePrice = async (productUrl) => {
+  if (!productUrl) return null;
+  
+  let browser;
+  let page;
+  console.log(`💡 Getting live price from: ${productUrl.substring(0, 70)}...`);
+
+  try {
+    browser = await puppeteer.launch(launchConfig);
+    page = await browser.newPage();
+    await page.goto(productUrl, { waitUntil: 'networkidle2', timeout: 20000 });
+
+    // A list of all known price selectors on a product detail page
+    const priceSelectors = [
+      'div._30jeq3._16Jk6d', // The most common price selector
+      'div.C7GNYd',         // A new possible selector
+      'div.Nx9bqj._4b5DiR'  // A selector sometimes reused from search
+    ];
+
+    let priceString = null;
+    for (const selector of priceSelectors) {
+      try {
+        await page.waitForSelector(selector, { timeout: 2000 }); // Wait briefly for each selector
+        priceString = await page.$eval(selector, el => el.innerText);
+        if (priceString) {
+          console.log(`[SCRAPER] Success! Found price using selector: "${selector}"`);
+          break; // Exit loop once a price is found
+        }
+      } catch (e) {
+        // This is expected if a selector isn't found, so we just continue
+      }
+    }
+
+    if (!priceString) {
+      throw new Error("Could not find any known price selector on the page.");
+    }
+
+    return Number(priceString.replace(/[^0-9]/g, ''));
+
+  } catch (error) {
+    console.error(`❌ Live price scraper failed for ${productUrl}:`, error.message);
+    if (page) {
+      await page.screenshot({ path: 'price_scraper_failure.png' });
+      console.log('📸 Screenshot of failed page saved to price_scraper_failure.png');
+    }
+    return null;
+  } finally {
+    if (browser) await browser.close();
+  }
+};

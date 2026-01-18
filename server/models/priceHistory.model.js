@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const priceHistorySchema = new mongoose.Schema({
   product: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product',
+    ref: "Product",
     required: true,
   },
   sellerName: {
@@ -22,4 +22,4 @@ const priceHistorySchema = new mongoose.Schema({
 
 priceHistorySchema.index({ product: 1, timestamp: -1 });
 
-export default mongoose.model('PriceHistory', priceHistorySchema);
+export default mongoose.model("PriceHistory", priceHistorySchema);

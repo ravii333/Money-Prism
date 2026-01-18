@@ -1,45 +1,64 @@
 import Product from "../models/Product.js";
-import scrapeFlipkart from "../services/scrapeFlipcart.js";
-import { normalizePrice, normalizeTitle } from "../utils/helpers.js";
+import { searchProducts as scrapeAndSearch } from "../services/scrapeFlipcart.js";
+import {
+  normalizePrice,
+  normalizeTitle,
+  aiInferCategory,
+} from "../utils/helpers.js";
 
-export const searchProducts = async (req, res) => {
+export const searchAndProcessProducts = async (req, res) => {
   const query = req.query.q;
   if (!query) {
     return res
       .status(400)
-      .json({
-        success: false,
-        message: 'Query parameter "q" is required',
-        data: [],
-      });
+      .json({ success: false, message: 'Query parameter "q" is required' });
   }
 
   try {
-    const scrapedListings = await scrapeFlipkart(query);
-    const normalizedTitles = [];
+    const scrapedListings = await scrapeAndSearch(query);
+    if (scrapedListings.length === 0) {
+      return res
+        .status(200)
+        .json({
+          success: true,
+          message: "No products found matching your query.",
+          data: [],
+        });
+    }
 
-    for (const listing of scrapedListings) {
+    // Process each scraped listing to find or create a product in the DB
+    const processingPromises = scrapedListings.map(async (listing) => {
       const normalizedTitle = normalizeTitle(listing.title);
       const normalizedPrice = normalizePrice(listing.price);
 
-      if (!normalizedTitle || !normalizedPrice) continue;
-      normalizedTitles.push(normalizedTitle);
+      // Skip if essential data is missing after normalization
+      if (!normalizedTitle || !normalizedPrice || !listing.link) return null;
 
+      // Find an existing product based on its normalized name
       let product = await Product.findOne({ normalizedName: normalizedTitle });
+
       if (!product) {
+        // --- PRODUCT DOES NOT EXIST, CREATE IT ---
+        // Infer the category using the AI helper
+        const category = await aiInferCategory(listing.title);
+
+        // Create a new product instance in memory (not yet saved)
         product = new Product({
           name: listing.title,
           normalizedName: normalizedTitle,
           imageURL: listing.image,
-          sellers: [],
+          category: category, // ✅ Assign the AI-detected category
+          sellers: [], // Sellers will be added next
         });
       }
 
+      // --- ADD OR UPDATE SELLER INFORMATION ---
       const existingSellerIndex = product.sellers.findIndex(
-        (s) => s.productURL === listing.link
+        (s) => s.productURL === listing.link,
       );
+
       const newSellerData = {
-        name: "Flipkart",
+        name: "Flipkart", // Or dynamically determine this
         productURL: listing.link,
         price: normalizedPrice,
         lastUpdated: new Date(),
@@ -50,62 +69,61 @@ export const searchProducts = async (req, res) => {
         if (existingSeller.price !== normalizedPrice) {
           existingSeller.priceHistory.push({ price: normalizedPrice });
         }
-        product.sellers[existingSellerIndex] = {
+        product.sellers.set(existingSellerIndex, {
           ...existingSeller.toObject(),
           ...newSellerData,
-        };
+        });
       } else {
         newSellerData.priceHistory = [{ price: normalizedPrice }];
         product.sellers.push(newSellerData);
       }
 
       product.updateAggregatePrices();
-      await product.save();
-    }
-
-    const finalProducts = await Product.find({
-      $or: [
-        { normalizedName: { $in: normalizedTitles } },
-        { name: new RegExp(query, "i") },
-      ],
+      return product.save();
     });
 
-    res.status(200).json({
-      success: true,
-      message: `Found ${finalProducts.length} matching products.`,
-      data: finalProducts,
-    });
+    const processedProducts = (await Promise.all(processingPromises)).filter(
+      Boolean,
+    ); // .filter(Boolean) removes nulls
+
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: `Successfully processed ${processedProducts.length} products.`,
+        data: processedProducts,
+      });
   } catch (err) {
-    console.error("Error in searchProducts controller:", err);
+    console.error("--- ERROR in searchAndProcessProducts ---:", err);
     res
       .status(500)
-      .json({
-        success: false,
-        message: "An internal server error occurred during scraping.",
-        data: [],
-      });
+      .json({ success: false, message: "An internal server error occurred." });
   }
 };
 
 export const getFeaturedProducts = async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 4;
-    const featuredProducts = await Product.find({})
-      .sort({ updatedAt: -1 })
-      .limit(limit);
-
-    res.status(200).json({
-      success: true,
-      message: `Successfully fetched ${featuredProducts.length} featured products.`,
-      data: featuredProducts,
-    });
+    const limit = parseInt(req.query.limit) || 8;
+    const categoryQuery = req.query.category;
+    const filter = {};
+    if (categoryQuery && categoryQuery !== "All") {
+      filter.category = categoryQuery;
+    }
+    const featuredProducts = await Product.aggregate([
+      { $match: filter },
+      { $sample: { size: limit } },
+    ]);
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: `Fetched ${featuredProducts.length} products.`,
+        data: featuredProducts,
+      });
   } catch (error) {
-    console.error("Error fetching featured products:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch featured products.",
-      data: [],
-    });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch featured products." });
   }
 };
 
@@ -115,7 +133,7 @@ export const getProductById = async (req, res) => {
     if (!product) {
       return res
         .status(404)
-        .json({ success: false, message: "Product not found", data: null });
+        .json({ success: false, message: "Product not found" });
     }
     res
       .status(200)
@@ -123,39 +141,6 @@ export const getProductById = async (req, res) => {
   } catch (err) {
     res
       .status(500)
-      .json({
-        success: false,
-        message: "Failed to fetch product details",
-        data: null,
-      });
-  }
-};
-
-export const getProductPriceHistory = async (req, res) => {
-  try {
-    const product = await Product.findById(
-      req.params.id,
-      "sellers.name sellers.priceHistory"
-    );
-    if (!product) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Product not found", data: [] });
-    }
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Price history retrieved",
-        data: product.sellers,
-      });
-  } catch (err) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to fetch price history",
-        data: [],
-      });
+      .json({ success: false, message: "Failed to fetch product details" });
   }
 };

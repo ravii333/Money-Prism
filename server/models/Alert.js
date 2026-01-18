@@ -4,7 +4,7 @@ const alertSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", 
+      ref: "User",
       required: true,
     },
     product: {
@@ -12,7 +12,11 @@ const alertSchema = new mongoose.Schema(
       ref: "Product",
       required: true,
     },
-    targetPrice: {
+    targetPriceLow: {
+      type: Number,
+      required: true,
+    },
+    targetPriceHigh: {
       type: Number,
       required: true,
     },
@@ -21,7 +25,7 @@ const alertSchema = new mongoose.Schema(
       default: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("Alert", alertSchema);

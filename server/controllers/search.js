@@ -10,7 +10,7 @@ export const scrapeSearchResults = async (req, res) => {
 
   try {
     const url = `https://www.flipkart.com/search?q=${encodeURIComponent(
-      query
+      query,
     )}`;
     const { data } = await axios.get(url, {
       headers: {
