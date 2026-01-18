@@ -1,10 +1,13 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App.jsx'; // Your main App component
+import './index.css';     // Your global styles
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
+// No more Clerk imports or keys are needed here.
+
+// The root of your application simply renders the App component.
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
     <App />
-  </StrictMode>,
-)
+  </React.StrictMode>,
+);

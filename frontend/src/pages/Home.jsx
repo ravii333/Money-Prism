@@ -1,41 +1,54 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+
 import SearchBar from "../components/SearchBar";
 import ProductCard from "../components/ProductCard";
 import SectionHeading from "../components/SectionHeading";
 
-import { categories, testimonials } from "../Data/mockData.js";
-
+import {
+  // categories as staticCategories,
+  testimonials,
+} from "../Data/mockData.js";
 import heroBg from "../assets/herobg.png";
 import { FaSearch, FaBell, FaTags, FaStar } from "react-icons/fa";
+
+const filterCategories = ["All", "Mobile", "Laptop", "Camera", "Headphones"];
 
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchFeaturedProducts = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await axios.get("/api/products/featured?limit=4");
+  const [activeCategory, setActiveCategory] = useState("All");
 
-        if (response.data && response.data.success) {
-          setFeaturedProducts(response.data.data);
-        } else {
-          setError("Could not fetch featured products.");
-        }
-      } catch (err) {
-        setError("An error occurred while fetching data from the server.");
-        console.error(err);
-      } finally {
-        setIsLoading(false);
+  const fetchFeaturedProducts = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      let apiUrl = `/api/products/featured?limit=8`;
+      if (activeCategory !== "All") {
+        apiUrl += `&category=${activeCategory}`;
       }
-    };
 
+      const response = await axios.get(apiUrl);
+
+      if (response.data && response.data.success) {
+        setFeaturedProducts(response.data.data);
+      } else {
+        setError(response.data.message || "Could not fetch featured products.");
+      }
+    } catch (err) {
+      setError("An error occurred while fetching data from the server.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeCategory]); 
+
+  useEffect(() => {
     fetchFeaturedProducts();
-  }, []); 
+  }, [fetchFeaturedProducts]);
 
   const renderFeaturedProducts = () => {
     if (isLoading) {
@@ -51,12 +64,12 @@ const Home = () => {
     if (featuredProducts.length === 0) {
       return (
         <div className="text-center p-8 text-gray-500">
-          No featured products available right now.
+          No featured products found for this category.
         </div>
       );
     }
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {featuredProducts.map((product) => (
           <ProductCard key={product._id} product={product} />
         ))}
@@ -66,6 +79,7 @@ const Home = () => {
 
   return (
     <div>
+      {/* --- Hero Section --- */}
       <section
         className="relative bg-cover bg-center text-white"
         style={{ backgroundImage: `url(${heroBg})` }}
@@ -84,15 +98,32 @@ const Home = () => {
         </div>
       </section>
 
+      {/* --- Featured Products Section (Now Interactive) --- */}
       <section className="container mx-auto px-6 py-16 border-b border-gray-200">
-        <SectionHeading>Featured Parts</SectionHeading>
+        <SectionHeading>Featured Products</SectionHeading>
+        <div className="flex justify-center flex-wrap gap-2 sm:gap-4 mb-8">
+          {filterCategories.map((category) => (
+            <button
+              key={category}
+              onClick={() => setActiveCategory(category)}
+              className={`px-4 py-2 text-sm sm:text-base font-semibold rounded-full transition-all duration-300 transform hover:scale-105 ${
+                activeCategory === category
+                  ? "bg-blue-600 text-white shadow-lg"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
         {renderFeaturedProducts()}
       </section>
 
-      <section className="container mx-auto px-6 py-16 border-b border-gray-200">
+      {/* --- Other Static Sections --- */}
+      {/* <section className="container mx-auto px-6 py-16 border-b border-gray-200">
         <SectionHeading>Shop by Category</SectionHeading>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {categories.map((category) => (
+          {staticCategories.map((category) => (
             <div
               key={category.name}
               className="relative rounded-lg overflow-hidden group cursor-pointer"
@@ -111,7 +142,7 @@ const Home = () => {
             </div>
           ))}
         </div>
-      </section>
+      </section> */}
 
       <section className="container mx-auto px-6 py-16 border-b border-gray-200">
         <SectionHeading>How It Works</SectionHeading>
@@ -120,9 +151,9 @@ const Home = () => {
             <div className="flex items-center justify-center w-20 h-20 mb-6 bg-blue-100 rounded-full">
               <FaSearch className="text-blue-800" size={36} />
             </div>
-            <h3 className="text-xl font-semibold mb-2">1. Search for a Part</h3>
+            <h3 className="text-xl font-semibold mb-2">1. Search for a Product</h3>
             <p className="text-gray-600">
-              Use our powerful search to find any car or mobile part you need.
+              Use our powerful search to find any Electronic Product you need.
             </p>
           </div>
           <div className="flex flex-col items-center">
@@ -131,8 +162,8 @@ const Home = () => {
             </div>
             <h3 className="text-xl font-semibold mb-2">2. Compare Prices</h3>
             <p className="text-gray-600">
-              We aggregate prices from multiple marketplaces so you can easily
-              compare.
+              We aggregate prices so you can easily compare.
+              {/* from multiple marketplaces */}
             </p>
           </div>
           <div className="flex flex-col items-center">
@@ -147,7 +178,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* --- Testimonials Section (Static) --- */}
       <section className="bg-white">
         <div className="container mx-auto px-6 py-16">
           <SectionHeading>What Our Users Say</SectionHeading>
@@ -179,8 +209,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* --- Newsletter Signup Section (Static) --- */}
-      <section className="bg-[#e3e5eb] text-gray-900">
+      <section className="bg-gray-800 text-white">
         <div className="container mx-auto px-6 py-16 text-center">
           <h2 className="text-3xl font-bold mb-2">Don't Miss a Deal!</h2>
           <p className="mb-6 max-w-xl mx-auto opacity-90">
@@ -196,7 +225,7 @@ const Home = () => {
             />
             <button
               type="submit"
-              className="bg-gray-600 text-white font-bold p-3 rounded-md hover:bg-gray-700 transition-colors"
+              className="bg-blue-600 text-white font-bold p-3 rounded-md hover:bg-blue-700 transition-colors"
             >
               Subscribe
             </button>

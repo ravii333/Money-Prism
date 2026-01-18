@@ -3,6 +3,7 @@ import samsungS21 from '../assets/samsungS21.png';
 //import carBatteryExide from '../assets/car-battery-exide.png';
 import hondaCarBattery from '../assets/hondaCarBattery.png';
 
+/*
 export const featuredParts = [
   { id: 1, name: 'iPhone 12 Screen', price: '4,998', image: iphone12 },
   //{ id: 2, name: 'Car Battery EXIDE', price: '8,998', image: carBatteryExide },
@@ -96,6 +97,8 @@ export const categories =[
   {name:"Laptops"},
 
 ];
+
+*/
 
 export const testimonials = [
   {

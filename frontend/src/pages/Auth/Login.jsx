@@ -1,140 +1,49 @@
-// src/pages/Auth/Login.jsx
-
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FaUser, FaLock } from 'react-icons/fa';
+import React, { useState } from 'react';
+import axios from 'axios';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { FaLock, FaEnvelope } from 'react-icons/fa';
 
 const Login = ({ setUser }) => {
-  const navigate = useNavigate();
-  const location = useLocation(); // Hook to access the state passed from navigate
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
+  const successMessage = location.state?.message;
 
-  // --- THIS useEffect IS THE NEW ADDITION ---
-  // It runs when the component loads to check for a success message
-  useEffect(() => {
-    if (location.state?.message) {
-      setSuccessMessage(location.state.message);
-      // Clean the location state to prevent the message from re-appearing on refresh
-      window.history.replaceState({}, document.title);
-    }
-  }, [location]);
-
-  const handleLogin = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!email || !password) {
-      setError('Please enter both email and password.');
-      return;
-    }
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        setError('Please enter a valid email address.');
-        return;
-    }
-
-    setIsLoading(true);
     setError('');
-    setSuccessMessage(''); // Clear success message on new login attempt
-
-    setTimeout(() => {
-      const userName = email.split('@')[0];
-      const loggedInUser = {
-        id: new Date().getTime(),
-        name: userName.charAt(0).toUpperCase() + userName.slice(1),
-        email: email,
-      };
-      
-      setUser(loggedInUser);
-      localStorage.setItem('user', JSON.stringify(loggedInUser));
-      navigate('/');
-    }, 1500);
+    setIsLoading(true);
+    try {
+      const response = await axios.post('/api/users/login', { email, password });
+      if (response.data && response.data.success) {
+        localStorage.setItem('userInfo', JSON.stringify(response.data.data));
+        setUser(response.data.data);
+        navigate('/');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-lg">
-        <div className="text-center">
-          <h1 className="text-3xl font-extrabold text-gray-900">
-            Welcome Back to Money-Prism
-          </h1>
-          <p className="mt-2 text-gray-600">
-            Sign in to access your alerts and account.
-          </p>
-        </div>
-
-        {/* --- THIS BLOCK DISPLAYS THE SUCCESS MESSAGE --- */}
-        {successMessage && (
-          <div className="p-3 my-2 text-sm text-center text-green-800 bg-green-100 rounded-lg">
-            {successMessage}
-          </div>
-        )}
-
-        {/* --- THIS BLOCK DISPLAYS THE ERROR MESSAGE --- */}
-        {error && (
-          <div className="p-3 my-2 text-sm text-center text-red-800 bg-red-100 rounded-lg">
-            {error}
-          </div>
-        )}
-        
-        <form className="space-y-6" onSubmit={handleLogin}>
-          <div className="relative">
-            <FaUser className="absolute top-3.5 left-4 text-gray-400" />
-            <input
-              id="email-address"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-md placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-blue"
-              placeholder="Enter any valid email"
-            />
-          </div>
-
-          <div className="relative">
-            <FaLock className="absolute top-3.5 left-4 text-gray-400" />
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-md placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-blue"
-              placeholder="Enter any password"
-            />
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent text-lg font-medium rounded-md text-gray-500 bg-gray-200 hover:bg-brand-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 hover:bg-gray-600 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Signing In...' : 'Sign In'}
-            </button>
-          </div>
+        <h1 className="text-3xl font-extrabold text-center text-gray-900">Welcome Back</h1>
+        {successMessage && <div className="p-3 text-sm text-center text-green-800 bg-green-100 rounded-lg">{successMessage}</div>}
+        {error && <div className="p-3 text-sm text-center text-red-800 bg-red-100 rounded-lg">{error}</div>}
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div className="relative"><FaEnvelope className="absolute top-3.5 left-4 text-gray-400" /><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-md" placeholder="Email Address" required /></div>
+          <div className="relative"><FaLock className="absolute top-3.5 left-4 text-gray-400" /><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-md" placeholder="Password" required /></div>
+          <button type="submit" disabled={isLoading} className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition disabled:bg-gray-400">{isLoading ? 'Signing In...' : 'Sign In'}</button>
         </form>
-
-        <div className="text-sm text-center text-gray-600">
-          <p>
-            Don't have an account?{' '}
-            <Link to="/register" className="font-medium text-brand-blue hover:text-brand-blue-light">
-              Register here
-            </Link>
-          </p>
-        </div>
+        <p className="text-sm text-center text-gray-600">Don't have an account? <Link to="/register" className="font-medium text-blue-600 hover:underline">Register here</Link></p>
       </div>
     </div>
   );
 };
-
 export default Login;

@@ -17,7 +17,7 @@ const SearchBar = () => {
     <form onSubmit={handleSearch} className="relative w-full max-w-lg">
       <input
         type="text"
-        placeholder="Search for products (e.g., iPhone 12, car battery)..."
+        placeholder="Search for products (e.g: iphone, camera etc)..."
         className="w-full py-3 pl-4 pr-12 text-gray-700 bg-white rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-gray-800"
         value={query} 
         onChange={(e) => setQuery(e.target.value)} 

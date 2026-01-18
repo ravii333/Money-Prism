@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from "react";
-import {
-  createBrowserRouter,
-  RouterProvider,
-  Outlet,
-  useNavigate,
-} from "react-router-dom";
-
+import { createBrowserRouter, RouterProvider, Outlet, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-
 import Home from "./pages/Home";
 import SearchResults from "./pages/SearchResults";
 import ProductDetail from "./pages/ProductDetail";
@@ -16,24 +9,16 @@ import AlertsDashboard from "./pages/AlertsDashboard";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 
-const Profile = () => (
-  <div className="text-center p-20 text-3xl">User Profile Page</div>
-);
-const Wishlist = () => (
-  <div className="text-center p-20 text-3xl">Wishlist Page</div>
-);
-const Cart = () => (
-  <div className="text-center p-20 text-3xl">Shopping Cart Page</div>
-);
-
+const ProtectedRoute = ({ children }) => {
+  const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+  return userInfo ? children : <Navigate to="/login" replace />;
+};
 
 function AppLayout({ user, handleLogout }) {
   return (
     <div className="flex flex-col min-h-screen font-sans">
       <Navbar user={user} handleLogout={handleLogout} />
-      <main className="flex-grow">
-        <Outlet />
-      </main>
+      <main className="flex-grow bg-gray-50"><Outlet /></main>
       <Footer />
     </div>
   );
@@ -41,17 +26,15 @@ function AppLayout({ user, handleLogout }) {
 
 function App() {
   const [user, setUser] = useState(null);
-
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    const storedUserInfo = localStorage.getItem("userInfo");
+    if (storedUserInfo) setUser(JSON.parse(storedUserInfo));
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    localStorage.removeItem("userInfo");
     setUser(null);
+    window.location.href = '/';
   };
 
   const router = createBrowserRouter([
@@ -61,21 +44,12 @@ function App() {
       children: [
         { path: "/", element: <Home /> },
         { path: "/search", element: <SearchResults /> },
-        { path: "/product/:id", element: <ProductDetail /> },
-        { path: "/alerts", element: <AlertsDashboard /> },
-        { path: "/profile", element: <Profile /> },
-        { path: "/wishlist", element: <Wishlist /> },
-        { path: "cart", element: <Cart /> },
+        { path: "/product/:id", element: <ProductDetail user={user} /> },
+        { path: "/alerts", element: <ProtectedRoute><AlertsDashboard /></ProtectedRoute> },
       ],
     },
-    {
-      path: "/login",
-      element: <Login setUser={setUser} />,
-    },
-    {
-      path: "/register",
-      element: <Register />,
-    },
+    { path: "/login", element: <Login setUser={setUser} /> },
+    { path: "/register", element: <Register /> },
   ]);
 
   return <RouterProvider router={router} />;

@@ -15,7 +15,7 @@ const Footer = () => {
           <div className="col-span-1">
             <h3 className="text-2xl font-bold mb-2">MoneyPrism</h3>
             <p className="text-gray-400">
-              Find the best prices on car and mobile parts. We help you save
+              Find the best prices on your favorite Products. We help you save
               smarter and shop better.
             </p>
           </div>

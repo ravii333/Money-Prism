@@ -1,24 +1,21 @@
 import React, { useState } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
-import {
-  FaShoppingBag,
-  FaHeart,
-  FaUser,
-  FaBars,
-  FaTimes,
-  FaChevronDown,
-  FaChevronUp,
-} from "react-icons/fa";
+import { FaHeart, FaBars, FaTimes, FaUser } from "react-icons/fa";
 
 const Navbar = ({ user, handleLogout }) => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [exploreOpen, setExploreOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const navigate = useNavigate();
 
   const closeAllMenus = () => {
     setMenuOpen(false);
-    setExploreOpen(false);
     setUserDropdownOpen(false);
+  };
+
+  const onLogoutClick = () => {
+    handleLogout();
+    closeAllMenus();
+    navigate("/");
   };
 
   return (
@@ -28,23 +25,14 @@ const Navbar = ({ user, handleLogout }) => {
           MoneyPrism
         </Link>
 
-        {/* Hamburger Menu Icon for Mobile */}
         <div className="md:hidden">
           <button onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
           </button>
         </div>
 
-        {/* Navigation Links */}
         <div
-          className={`
-            md:flex md:items-center md:space-x-6 
-            ${
-              menuOpen
-                ? "absolute top-full left-0 w-full bg-brand-blue flex flex-col items-center space-y-4 py-6 shadow-xl"
-                : "hidden"
-            }
-          `}
+          className={`md:flex md:items-center md:space-x-6 ${menuOpen ? "absolute top-full left-0 w-full bg-gray-800 flex flex-col items-center space-y-4 py-6 shadow-xl" : "hidden"}`}
         >
           <NavLink
             to="/"
@@ -55,87 +43,51 @@ const Navbar = ({ user, handleLogout }) => {
           >
             Home
           </NavLink>
+          {/* Add your Explore dropdown here if needed */}
 
-          <div className="relative">
-            <button
-              onClick={() => setExploreOpen(!exploreOpen)}
-              className="flex items-center gap-1 hover:text-gray-300 focus:outline-none"
-            >
-              Explore{" "}
-              {exploreOpen ? (
-                <FaChevronUp size={12} />
-              ) : (
-                <FaChevronDown size={12} />
-              )}
-            </button>
-            {exploreOpen && (
-              <div className="md:absolute top-full mt-2 w-48 bg-gray-900 text-white shadow-lg rounded-lg py-2 z-20">
-                <Link
-                  to="/search?category=mobiles"
-                  onClick={closeAllMenus}
-                  className="block px-4 py-2  hover:border-b-1 border-white "
-                >
-                  Mobiles
-                </Link>
-                <Link
-                  to="/search?category=laptops"
-                  onClick={closeAllMenus}
-                  className="block px-4 py-2 hover:border-b-2 border-white"
-                >
-                  Laptops
-                </Link>
-              </div>
-            )}
-          </div>
-
-          <NavLink
-            to="/alerts"
-            onClick={closeAllMenus}
-            className={({ isActive }) =>
-              isActive ? "pb-1 border-b-2 border-white" : "hover:text-gray-200"
-            }
-          >
-            My Alerts
-          </NavLink>
-
-          {/* Icons and User Auth */}
-          <div className="flex items-center gap-5 md:ml-4 border-t md:border-none border-blue-400 pt-4 md:pt-0 mt-4 md:mt-0">
-            <Link
-              to="/wishlist"
+          {user && ( // Only show "My Alerts" if the user is logged in
+            <NavLink
+              to="/alerts"
               onClick={closeAllMenus}
-              className="hover:border-b-2 border-white"
-              title="Wishlist"
+              className={({ isActive }) =>
+                isActive
+                  ? "pb-1 border-b-2 border-white"
+                  : "hover:text-gray-300"
+              }
             >
-              <FaHeart size={15} />
-              Wishlist
-            </Link>
+              My Alerts
+            </NavLink>
+          )}
+
+          <div className="flex items-center gap-5 md:ml-4 border-t md:border-none border-gray-700 pt-4 md:pt-0 mt-4 md:mt-0">
+            {user && ( // Only show Wishlist if the user is logged in
+              <Link
+                to="/wishlist"
+                onClick={closeAllMenus}
+                className="flex items-center gap-2 hover:text-gray-300"
+                title="Wishlist"
+              >
+                <FaHeart size={20} />
+                <span className="md:hidden">Wishlist</span>
+              </Link>
+            )}
 
             {user ? (
               <div className="relative">
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="focus:outline-none"
+                  className="focus:outline-none p-2 rounded-full hover:bg-gray-700"
                 >
                   <FaUser size={20} />
                 </button>
                 {userDropdownOpen && (
-                  <div className="md:absolute right-0 mt-2 w-40 bg-brand-blue shadow-lg rounded-lg py-2 z-20">
-                    <div className="px-4 py-2 text-blue-200 text-sm border-b border-blue-500">
-                      Hi, {user.name}!
+                  <div className="absolute right-0 mt-2 w-48 bg-gray-900 shadow-lg rounded-lg py-2 z-20">
+                    <div className="px-4 py-2 text-sm text-gray-400 border-b border-gray-700">
+                      Signed in as {user.email}
                     </div>
-                    <Link
-                      to="/profile"
-                      onClick={closeAllMenus}
-                      className="block px-4 py-2 hover:bg-brand-blue-light"
-                    >
-                      Profile
-                    </Link>
                     <button
-                      onClick={() => {
-                        handleLogout();
-                        closeAllMenus();
-                      }}
-                      className="block w-full text-left px-4 py-2 hover:bg-brand-blue-light"
+                      onClick={onLogoutClick}
+                      className="block w-full text-left px-4 py-2 hover:bg-gray-700"
                     >
                       Logout
                     </button>
@@ -146,7 +98,7 @@ const Navbar = ({ user, handleLogout }) => {
               <Link
                 to="/login"
                 onClick={closeAllMenus}
-                className="bg-white text-gray-500 font-bold px-4 py-2 rounded-md hover:bg-gray-600 transition-colors hover:text-white"
+                className="bg-blue-600 text-white font-bold px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
               >
                 Login
               </Link>
